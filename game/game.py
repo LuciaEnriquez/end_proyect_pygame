@@ -1,59 +1,67 @@
 import pygame as pg
-from random import seed
-from random import randint
 
-TAMANNO =(800, 600)
+from Asteroid import Asteroid
+from Ship import Ship
 
-class Bola():
-    def __init__(self, x, y, w, h, color=(255, 255, 205)):
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
-        self.color = color
-
-    def actualizate(self):
-        self.x -=5
-
-        if self.x <= 0:
-            self.y = randint(20, TAMANNO[1] - 20)
-            self.x = TAMANNO[0]-20
+SIZE =(800, 600)
 
 class Game():
 
+    asteroidList = []
+    positionShip = []
+    positionShip = []
+
     def __init__(self, w, h):
-        self.pantalla = pg.display.set_mode((TAMANNO))
+        self.pantalla = pg.display.set_mode((SIZE))
         self.reloj = pg.time.Clock() 
          
     def init(self):
         pg.init()
 
-    def bucle_principal(self):
-        seed(1)
-        bola = Bola(TAMANNO[0]-20, randint(20, TAMANNO[1] - 20), 20, 20)
+    def initGame(self):
+        self.initAsteroidList()
         pg.init()
+        ship = Ship(SIZE[1])
         game_over = False
+        pause = False
         while not game_over:
             self.reloj.tick(50)
 
-            #eventos = pg.event.get()
-            #for evento in eventos:
-            #    if evento.type == pg.KEYDOWN:
-            #        game_over = True
+            eventos = pg.event.get()
+            for evento in eventos:
+                if evento.type == pg.QUIT:
+                    game_over = True
 
-            
+            if pg.key.get_pressed()[pg.K_p]:
+                pause = not pause
 
-            bola.actualizate()       
+            if pause == False:
+                if pg.key.get_pressed()[pg.K_DOWN]:
+                        ship.moveToDown()
+                elif pg.key.get_pressed()[pg.K_UP]:
+                        ship.moveToUp()
 
-            self.pantalla.fill((0, 0, 0))
-            pg.draw.rect(self.pantalla, bola.color, pg.Rect(bola.x, bola.y, bola.w, bola.h))
+                self.pantalla.fill((0, 0, 0))
 
-            pg.display.flip()
+                self.positionShip = (ship.x + ship.w, ship.y)
+
+                for asteroid in self.asteroidList:
+                    if self.positionShip[0] == asteroid.x and self.positionShip[1] == asteroid.y:
+                        pause = not pause
+                    asteroid.update()   
+                    pg.draw.rect(self.pantalla, asteroid.color, pg.Rect(asteroid.x, asteroid.y, asteroid.w, asteroid.h))
+
+                ship.update()
+                pg.draw.rect(self.pantalla, ship.color, pg.Rect(ship.x, ship.y, ship.w, ship.h))
+                
+                pg.display.flip()
 
         pg.quit()
-        
-        #self.bucle_principal()
 
+    def initAsteroidList(self):
+        for i in range(5):
+            asteroid = Asteroid( 20, 20, SIZE, i, 5)
+            self.asteroidList.append(asteroid)
        
 juego = Game(800, 600)
-juego.bucle_principal()       
+juego.initGame()       
