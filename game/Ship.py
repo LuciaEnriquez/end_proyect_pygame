@@ -4,7 +4,7 @@ class Ship():
         self.x = 0
         self.y = size / 2
         self.w = 50
-        self.h = 25
+        self.h = 20
         self.size = size - self.h
         self.color = color
         self.top = False
