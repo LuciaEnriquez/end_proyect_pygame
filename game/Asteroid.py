@@ -1,13 +1,11 @@
 import pygame as pg
 from random import randint
-from random import seed
 
 class Asteroid():
 
     def __init__(self, size, image):
-        seed(1)
         self.x = size[0]-20
-        self.y = randint(20, size[1] - 20)
+        self.y = 0
         self.w = 20
         self.h = 20
         self.size = size
@@ -16,9 +14,10 @@ class Asteroid():
         self.setYandX()
         self.setDimensionAsteroid()
         self.delete = False
+        self.speed = randint(2 , 8)
 
     def update(self):
-        self.x -=5
+        self.x -= self.speed
 
         if self.x <= ( - self.w) and self.delete == False:
             self.setYandX()
@@ -27,10 +26,9 @@ class Asteroid():
         self.delete = True
 
     def setYandX(self):
-        dividerPageNum = randint(1,6)
-        section = self.size[1] / dividerPageNum
-        self.y = randint(section , section + section - self.h)
-        self.x = randint( self.size[0], self.size[0]+ 150)
+        section = self.size[1]
+        self.y = randint(0 , section - self.h)
+        self.x = randint( self.size[0], self.size[0] + 300)
         self.setDimensionAsteroid()
 
     def setDimensionAsteroid(self):

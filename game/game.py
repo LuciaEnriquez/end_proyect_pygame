@@ -1,20 +1,24 @@
 import pygame as pg
 from pygame.draw import rect
-
+import os
 from Asteroid import Asteroid
-from Ship import Ship
+from SpaceShip import SpaceShip
 
 SIZE =(800, 600)
 
 class Game():
 
+    lives = 2
     asteroidList = []
     asteroidDeleteList = []
     numNextLevel = 400
     nextLevel = numNextLevel
-    numCountLevel = 90
+    numCountLevel = 100
     countLevel = numCountLevel
-    deleteLevelAsteroid = 7
+    deleteLevelAsteroid = 6
+    resourcesDir = os.getcwd()+ "/game/resources/"
+    image = pg.image.load(os.path.join(resourcesDir, "asteroid.png"))
+    imageSpaceShip = pg.image.load(os.path.join(resourcesDir, "spaceship.png"))
 
     def __init__(self, w, h):
         self.window = pg.display.set_mode((w, h))
@@ -26,27 +30,34 @@ class Game():
     def initGame(self):
         self.addAsteroidList()
         pg.init()
+        pg.font.init()
+        pg.mixer.init()
+        explosion = pg.mixer.Sound(os.path.join(self.resourcesDir, "explosion.mp3"))
         font = None #pg.font.SysFont("corbel", 30)  
-        ship = Ship(SIZE[1])
+        spaceShip = SpaceShip(SIZE[1], self.imageSpaceShip)
         game_over = False
         pause = False
         count = 0
         while not game_over:
             self.reloj.tick(50)
 
-            eventos = pg.event.get()
-            for evento in eventos:
-                if evento.type == pg.QUIT:
+            events = pg.event.get()
+            for event in events:
+                if event.type == pg.QUIT:
                     game_over = True
-
-            if pg.key.get_pressed()[pg.K_p]:
-                pause = not pause
+                elif event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_p]:
+                    if self.lives > 0:
+                        pause = not pause
+                elif event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_r] and self.lives <= 0:
+                    self.resetGame()
+                    pause = False
+                    count = 0
 
             if pause == False:
                 if pg.key.get_pressed()[pg.K_DOWN]:
-                        ship.moveToDown()
+                        spaceShip.moveToDown()
                 elif pg.key.get_pressed()[pg.K_UP]:
-                        ship.moveToUp()
+                        spaceShip.moveToUp()
 
                 self.window.fill((0, 0, 0))  
 
@@ -63,14 +74,20 @@ class Game():
 
                 count += 1
 
-                ship.update()
-                pg.draw.rect(self.window, ship.color, pg.Rect(ship.x, ship.y, ship.w, ship.h))
+                spaceShip.update()
+                self.window.blit(spaceShip.image, (spaceShip.x, spaceShip.y))
 
                 cont = 3
                 for asteroid in self.asteroidList:
-                    if ((ship.x <= asteroid.x) and (ship.x + ship.w) >= asteroid.x) and ((ship.y - asteroid.h) <= asteroid.y and ((ship.y + asteroid.h) >= asteroid.y)) :
-                        pause = not pause
-                        self.textOverGame(font)
+                    if ((spaceShip.x <= asteroid.x) and (spaceShip.x + spaceShip.w) >= asteroid.x) and ((spaceShip.y - asteroid.h) <= asteroid.y and ((spaceShip.y + asteroid.h) >= asteroid.y)) :
+                        pg.mixer.Sound.play(explosion)
+                        self.asteroidDeleteList.append(asteroid)
+                        if self.lives <= 0:
+                            pause = True
+                            self.textOverGame(font)
+                        else:
+                            self.lives -= 1
+                        continue
 
                     if asteroid.x <= (  -asteroid.w * 2):
                         self.asteroidDeleteList.append(asteroid)
@@ -111,9 +128,18 @@ class Game():
         #self.window.blit(text, (20, SIZE[1] + 55))
 
     def addAsteroidList(self):
-        image = pg.image.load("/Users/miguel/Documents/Proyectos python/end_proyect_pygame/game/asteroid.png")
-        asteroid = Asteroid(SIZE, image)
+        asteroid = Asteroid(SIZE, self.image)
         self.asteroidList.append(asteroid)
+
+    def resetGame(self):
+        self.lives = 2
+        self.asteroidList = []
+        self.asteroidDeleteList = []
+        self.nextLevel = self.numNextLevel
+        self.countLevel = self.numCountLevel
+        self.deleteLevelAsteroid = 6
+        self.addAsteroidList()
+        self.addAsteroidList()
        
 juego = Game(800, 700)
 juego.initGame()   
