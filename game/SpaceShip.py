@@ -1,12 +1,15 @@
-class Ship():
+import pygame as pg
 
-    def __init__(self, size, color=(255, 255, 255)):
+class SpaceShip():
+
+    def __init__(self, size, image):
         self.x = 0
         self.y = size / 2
         self.w = 50
-        self.h = 20
+        self.h = 40
+        self.image = pg.transform.scale(image, (50, 40))
         self.size = size - self.h
-        self.color = color
+        self.color = (255, 255, 255)
         self.top = False
         self.bottom = False
 
