@@ -21,6 +21,9 @@ class Asteroid():
 
         if self.x <= ( - self.w) and self.delete == False:
             self.setYandX()
+            return True
+        else:
+            return False
 
     def setDelete(self):
         self.delete = True

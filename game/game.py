@@ -3,6 +3,7 @@ from pygame.draw import rect
 import os
 from Asteroid import Asteroid
 from SpaceShip import SpaceShip
+from UtilsDataBase import UtilsDataBase
 
 SIZE =(800, 600)
 
@@ -11,7 +12,7 @@ class Game():
     lives = 2
     asteroidList = []
     asteroidDeleteList = []
-    numNextLevel = 400
+    numNextLevel = 600
     nextLevel = numNextLevel
     numCountLevel = 100
     countLevel = numCountLevel
@@ -19,6 +20,8 @@ class Game():
     resourcesDir = os.getcwd()+ "/game/resources/"
     image = pg.image.load(os.path.join(resourcesDir, "asteroid.png"))
     imageSpaceShip = pg.image.load(os.path.join(resourcesDir, "spaceship.png"))
+    score = 0
+    count = 0
 
     def __init__(self, w, h):
         self.window = pg.display.set_mode((w, h))
@@ -33,11 +36,10 @@ class Game():
         pg.font.init()
         pg.mixer.init()
         explosion = pg.mixer.Sound(os.path.join(self.resourcesDir, "explosion.mp3"))
-        font = None #pg.font.SysFont("corbel", 30)  
+        font = pg.font.SysFont("corbel", 30)  
         spaceShip = SpaceShip(SIZE[1], self.imageSpaceShip)
         game_over = False
         pause = False
-        count = 0
         while not game_over:
             self.reloj.tick(50)
 
@@ -51,7 +53,6 @@ class Game():
                 elif event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_r] and self.lives <= 0:
                     self.resetGame()
                     pause = False
-                    count = 0
 
             if pause == False:
                 if pg.key.get_pressed()[pg.K_DOWN]:
@@ -61,18 +62,18 @@ class Game():
 
                 self.window.fill((0, 0, 0))  
 
-                self.textScore(count, font)
+                self.textScore(self.score, font)
                 self.textLevel(font)
                 levelNow = int(self.nextLevel / self.numNextLevel)
-                if count >= self.nextLevel:
+                if self.count >= self.nextLevel:
                     print("level" , levelNow)
                     self.nextLevel += self.numNextLevel
 
-                if count >= self.countLevel and levelNow < 7:
+                if self.count >= self.countLevel and levelNow < 7:
                     self.countLevel += self.numCountLevel
                     self.addAsteroidList()
 
-                count += 1
+                self.count += 1
 
                 spaceShip.update()
                 self.window.blit(spaceShip.image, (spaceShip.x, spaceShip.y))
@@ -85,6 +86,7 @@ class Game():
                         if self.lives <= 0:
                             pause = True
                             self.textOverGame(font)
+                            utilsDataBase.insertPointsAndLevel(self.score, int(levelNow))
                         else:
                             self.lives -= 1
                         continue
@@ -99,7 +101,8 @@ class Game():
 
                     cont -= 1
 
-                    asteroid.update()   
+                    if asteroid.update():
+                        self.score += 15
                     self.window.blit(asteroid.image, (asteroid.x, asteroid.y))
                 
                 for asteroid in self.asteroidDeleteList:
@@ -113,19 +116,20 @@ class Game():
 
 
     def textOverGame(self, font):
-        print()
-        #text = font.render('GAME OVER', True, (255, 255, 255))
-        #self.window.blit(text, text.get_rect(center = self.window.get_rect().center))
+        textOverGame = font.render('GAME OVER', True, (255, 255, 255))
+        textReset = font.render('Pulsa \'R\' para comenzar de nuevo', True, (255, 255, 255))
+        self.window.blit(textOverGame, textOverGame.get_rect(center = self.window.get_rect().center))
+        self.window.blit(textReset, (SIZE[0]/2, SIZE[1] + 55))
 
     def textScore(self, points, font):
-        string = "POINTS: " + str(points)
-        #text = font.render(string, True, (255, 255, 255))
-        #self.window.blit(text, (20, SIZE[1] + 20))
+        string = "PUNTOS: " + str(points)
+        text = font.render(string, True, (255, 255, 255))
+        self.window.blit(text, (20, SIZE[1] + 20))
 
     def textLevel(self, font):
         string = "LEVEL: " + str(self.nextLevel / self.numNextLevel)
-        #text = font.render(string, True, (255, 255, 255))
-        #self.window.blit(text, (20, SIZE[1] + 55))
+        text = font.render(string, True, (255, 255, 255))
+        self.window.blit(text, (20, SIZE[1] + 55))
 
     def addAsteroidList(self):
         asteroid = Asteroid(SIZE, self.image)
@@ -140,6 +144,13 @@ class Game():
         self.deleteLevelAsteroid = 6
         self.addAsteroidList()
         self.addAsteroidList()
+        self.score = 0
+        self.count = 0
        
 juego = Game(800, 700)
+utilsDataBase = UtilsDataBase
+#utilsDataBase.deleteTable()
+utilsDataBase.createTableIfNotExits()
+utilsDataBase.selectAllTable()
+juego.addAsteroidList()
 juego.initGame()   
