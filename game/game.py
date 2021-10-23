@@ -5,6 +5,7 @@ import os
 from Asteroid import Asteroid
 from SpaceShip import SpaceShip
 from UtilsDataBase import UtilsDataBase
+from Planet import Planet
 
 SIZE = (800, 600)
 WHITE = (255, 255, 255)
@@ -28,6 +29,8 @@ class Game():
     score = 0
     count = 0
     spaceShip = SpaceShip(SIZE[1], pg.image.load(os.path.join(resourcesDir, "spaceship.png")))
+    planet = Planet(SIZE, pg.image.load(os.path.join(resourcesDir, "planet.png")))
+    isShowPlanet = False
 
     def __init__(self, w, h):
         self.window = pg.display.set_mode((w, h))
@@ -36,6 +39,7 @@ class Game():
         pg.font.init()
         pg.mixer.init()
         self.explosion = pg.mixer.Sound(os.path.join(self.resourcesDir, "explosion.mp3"))
+        self.landingSound = pg.mixer.Sound(os.path.join(self.resourcesDir, "landing.mp3"))
         self.font = pg.font.SysFont("corbel", 30)  
         self.fontBig = pg.font.SysFont("corbel", 50)  
          
@@ -47,7 +51,7 @@ class Game():
         self.menuIsView = False
         game_over = False
         pause = False
-        selectStatus = self.listStatus[0]
+        selectStatus = self.listStatus[2]
         timeInfo = pg.time.get_ticks()
         while not game_over:
             self.time.tick(50)
@@ -112,20 +116,21 @@ class Game():
 
                     self.window.fill(BLACK)  
 
-                    self.textScore(self.score)
                     self.textLevel()
                     levelNow = int(self.nextLevel / self.numNextLevel)
                     if self.count >= self.nextLevel:
                         self.nextLevel += self.numNextLevel
 
-                    if self.count >= self.countLevel and levelNow < 7:
+                    if self.count >= self.countLevel and levelNow < (self.deleteLevelAsteroid - 2):
                         self.countLevel += self.numCountLevel
                         self.addAsteroidList()
+                    
+                    if self.deleteLevelAsteroid <= levelNow:
+                        self.isShowPlanet = True
 
                     self.count += 1
 
                     self.spaceShip.update()
-                    self.window.blit(self.spaceShip.image, (self.spaceShip.x, self.spaceShip.y))
 
                     for asteroid in self.asteroidList:
                         if ((self.spaceShip.x <= asteroid.x) and (self.spaceShip.x + self.spaceShip.w) >= asteroid.x) and ((self.spaceShip.y - asteroid.h) <= asteroid.y and ((self.spaceShip.y + asteroid.h) >= asteroid.y)) :
@@ -134,6 +139,7 @@ class Game():
                             if self.lives <= 0:
                                 pause = True
                                 self.textOverGame()
+                                self.lives = -1
                                 if self.score > 0:
                                     utilsDataBase.insertPointsAndLevel(self.score, int(levelNow))
                             else:
@@ -143,6 +149,9 @@ class Game():
                         if asteroid.x <= (  -asteroid.w * 2):
                             self.asteroidDeleteList.append(asteroid)
 
+                        if self.isShowPlanet:
+                            asteroid.setStop(True)
+
                         if asteroid.update():
                             self.score += 15
                         self.window.blit(asteroid.image, (asteroid.x, asteroid.y))
@@ -151,6 +160,24 @@ class Game():
                         self.asteroidList.remove(asteroid)
                     
                     self.asteroidDeleteList = []
+                    self.textScore(self.score)
+
+                    moveSpaceShip = False
+                    if len(self.asteroidList) <= 4 and self.isShowPlanet:
+                        moveSpaceShip = self.planet.update()
+                        self.window.blit(self.planet.image, (self.planet.x, self.planet.y))
+
+                    if len(self.asteroidList) <= 0 and moveSpaceShip:
+                        stateSpaceShip = self.spaceShip.moveToRight(self.planet.x - 100, SIZE[0]/5*3)
+                        if stateSpaceShip == SpaceShip.status[1]:
+                            pg.mixer.Sound.play(self.landingSound)
+                        elif stateSpaceShip == SpaceShip.status[2]:
+                            pause = True
+                            self.textWonGame()
+                            if self.score > 0:
+                                utilsDataBase.insertPointsAndLevel(self.score, int(levelNow))
+                        
+                    self.window.blit(self.spaceShip.image, (self.spaceShip.x, self.spaceShip.y))
 
             pg.display.flip()
 
@@ -158,16 +185,28 @@ class Game():
 
 
     def textOverGame(self):
-        textOverGame = self.font.render('GAME OVER', True, WHITE)
+        textOverGame = self.fontBig.render('GAME OVER', True, WHITE)
         textReset = self.font.render('Pulsa \'R\' para comenzar de nuevo', True, WHITE)
         self.window.blit(textOverGame, textOverGame.get_rect(center = self.window.get_rect().center))
         self.window.blit(textReset, (SIZE[0]/2, SIZE[1] + 20))
 
+    def textWonGame(self):
+        textWonGame = self.fontBig.render('¡Enhorabuena has ganado!', True, WHITE)
+        self.window.blit(textWonGame, textWonGame.get_rect(center = self.window.get_rect().center))
+    
+    def textLives(self):
+        string = "VIDAS: " + str(self.nextLevel / self.numNextLevel)
+        text = self.font.render(string, True, WHITE)
+        self.window.blit(text, (20, SIZE[1] + 55))
+
     def textScore(self, points):
         string = "PUNTOS: " + str(points)
+        stringLives = "VIDAS: " + str(self.lives +1)
         textClose = self.font.render('Pulsa \'M\' para cerrar y \'P\' para pausar', True, WHITE)
         text = self.font.render(string, True, WHITE)
+        textLives = self.font.render(stringLives, True, WHITE)
         self.window.blit(text, (20, SIZE[1] + 20))
+        self.window.blit(textLives, (int(text.get_rect()[2] + 40), SIZE[1] + 20))
         self.window.blit(textClose, (SIZE[0]/2, SIZE[1] + 55))
 
     def textLevel(self):
@@ -184,12 +223,14 @@ class Game():
         self.asteroidList.append(asteroid)
 
     def resetGame(self):
+        self.isShowPlanet = False
+        self.spaceShip.reset()
+        self.planet.reset()
         self.lives = 2
         self.asteroidList = []
         self.asteroidDeleteList = []
         self.nextLevel = self.numNextLevel
         self.countLevel = self.numCountLevel
-        self.deleteLevelAsteroid = 6
         self.addAsteroidList()
         self.addAsteroidList()
         self.score = 0
@@ -209,8 +250,11 @@ class Game():
         position += textSecundary.get_rect()[3] + 12
         textSecundary = self.font.render("- Mientras se incremente el nivel se iran incrementando los asteroides", True, WHITE)
         self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
-        position += SIZE[1]/4*3
-        textPrimary = self.fontBig.render("¡¡¡Buena suerte!!!", True, WHITE)
+        position += textSecundary.get_rect()[3] + 12
+        textSecundary = self.font.render("- Al final aparecerá un planeta nuevo, si tiene todas tus vidas aterrizaras", True, WHITE)
+        self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
+        position = SIZE[1]/4*3
+        textPrimary = self.fontBig.render("¡Buena suerte!", True, WHITE)
         self.window.blit(textPrimary, (int(SIZE[0]/2 - textPrimary.get_rect()[2]/2) , position))
 
     def initMenu(self):
