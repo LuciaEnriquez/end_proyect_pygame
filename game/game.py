@@ -239,19 +239,19 @@ class Game():
     def initIntro(self):
         self.window.fill(BLACK) 
         position = 50
-        textPrimary = self.fontBig.render("Intro a SearhWorld", True, WHITE)
+        textPrimary = self.fontBig.render("Instrucciones de SearhWorld", True, WHITE)
         self.window.blit(textPrimary, (int(SIZE[0]/2 - textPrimary.get_rect()[2]/2) , position))
         position += textPrimary.get_rect()[3] + 50
-        textSecundary = self.font.render("- Para mover hacia arriba la nave pulsa 'flecha arriba'", True, WHITE)
+        textSecundary = self.font.render("- Para mover hacia arriba la nave, pulsa 'flecha arriba'", True, WHITE)
         self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
         position += textSecundary.get_rect()[3] + 12
-        textSecundary = self.font.render("- Para mover hacia abajo la nave pulsa 'flecha abajo'", True, WHITE)
+        textSecundary = self.font.render("- Para mover hacia abajo la nave, pulsa 'flecha abajo'", True, WHITE)
         self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
         position += textSecundary.get_rect()[3] + 12
-        textSecundary = self.font.render("- Mientras se incremente el nivel se iran incrementando los asteroides", True, WHITE)
+        textSecundary = self.font.render("- Conforme se incremente de nivel, se irán incrementando los asteróides", True, WHITE)
         self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
         position += textSecundary.get_rect()[3] + 12
-        textSecundary = self.font.render("- Al final aparecerá un planeta nuevo, si tiene todas tus vidas aterrizaras", True, WHITE)
+        textSecundary = self.font.render("- Al final, aparecerá un planeta nuevo en el que aterrizaras", True, WHITE)
         self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
         position = SIZE[1]/4*3
         textPrimary = self.fontBig.render("¡Buena suerte!", True, WHITE)
