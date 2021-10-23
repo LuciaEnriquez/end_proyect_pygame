@@ -1,15 +1,20 @@
 import pygame as pg
+from pygame import time
 from pygame.draw import rect
 import os
 from Asteroid import Asteroid
 from SpaceShip import SpaceShip
 from UtilsDataBase import UtilsDataBase
-import ModelResults as ModelResults
 
-SIZE =(800, 600)
+SIZE = (800, 600)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
 class Game():
 
+    listStatus = ["MENU", "INTRO","JUEGO"]
+    listItem = ["NUEVA PARTIDA","BORRAR TODOS LOS RESULTADOS","SALIR"]
+    selectListItem = listItem[0]
     lives = 2
     asteroidList = []
     asteroidDeleteList = []
@@ -26,7 +31,7 @@ class Game():
 
     def __init__(self, w, h):
         self.window = pg.display.set_mode((w, h))
-        self.reloj = pg.time.Clock() 
+        self.time = pg.time.Clock() 
         pg.init()
         pg.font.init()
         pg.mixer.init()
@@ -42,35 +47,61 @@ class Game():
         self.menuIsView = False
         game_over = False
         pause = False
-        viewMenu = True
+        selectStatus = self.listStatus[0]
+        timeInfo = pg.time.get_ticks()
         while not game_over:
-            self.reloj.tick(50)
+            self.time.tick(50)
 
             events = pg.event.get()
             for event in events:
                 if event.type == pg.QUIT:
                     game_over = True
-                elif event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_s]:
-                    utilsDataBase.insertPointsAndLevel(40,2)
-                    utilsDataBase.insertPointsAndLevel(478,6)
-                elif event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_m]:
-                    self.resetGame()
-                    pause = False
-                    viewMenu = True
-                elif event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_SPACE] and viewMenu == True:
-                    self.resetGame()
-                    pause = False
-                    viewMenu = False
-                if viewMenu == False:
-                    if event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_p] and self.lives > 0:
-                        pause = not pause
-                        if pause:
-                            self.textPause()
-                    elif event.type == pg.KEYDOWN and pg.key.get_pressed()[pg.K_r] and self.lives <= 0:
+                elif event.type == pg.KEYDOWN:
+                    lenList = len(self.listItem)
+                    indexList = self.listItem.index(self.selectListItem)
+                    if pg.key.get_pressed()[pg.K_m]:
                         self.resetGame()
                         pause = False
-            if viewMenu == True:
+                        selectStatus = self.listStatus[0]
+                    elif (pg.key.get_pressed()[pg.K_SPACE] or pg.key.get_pressed()[pg.K_INSERT]) and selectStatus == self.listStatus[0]:
+                        if indexList == 0:
+                            self.resetGame()
+                            pause = False
+                            selectStatus = self.listStatus[1]
+                            timeInfo = pg.time.get_ticks()
+                        elif indexList == 1:
+                            utilsDataBase.resetTable()
+                            self.menuIsView = False
+                        elif indexList == 2:
+                            game_over = True
+                            
+                    if selectStatus == self.listStatus[2]:
+                        if pg.key.get_pressed()[pg.K_p] and self.lives > 0:
+                            pause = not pause
+                            if pause:
+                                self.textPause()
+                        elif pg.key.get_pressed()[pg.K_r] and self.lives <= 0:
+                            self.resetGame()
+                            pause = False
+                    else:
+                        if pg.key.get_pressed()[pg.K_DOWN] and indexList < lenList - 1:
+                            indexList += 1
+                            self.selectListItem = self.listItem[indexList]
+                            self.menuIsView = False
+                        elif pg.key.get_pressed()[pg.K_UP] and indexList > 0:
+                            indexList -= 1
+                            self.selectListItem = self.listItem[indexList]
+                            self.menuIsView = False
+
+
+            if selectStatus == self.listStatus[0]:
                 self.initMenu()
+            elif selectStatus == self.listStatus[1]:
+                self.initIntro()
+                if pg.time.get_ticks() > timeInfo + 10000:
+                    self.resetGame()
+                    pause = False
+                    selectStatus = self.listStatus[2]
             else:
                 self.menuIsView = False
                 if pause == False:
@@ -79,13 +110,12 @@ class Game():
                     elif pg.key.get_pressed()[pg.K_UP]:
                             self.spaceShip.moveToUp()
 
-                    self.window.fill((0, 0, 0))  
+                    self.window.fill(BLACK)  
 
                     self.textScore(self.score)
                     self.textLevel()
                     levelNow = int(self.nextLevel / self.numNextLevel)
                     if self.count >= self.nextLevel:
-                        print("level" , levelNow)
                         self.nextLevel += self.numNextLevel
 
                     if self.count >= self.countLevel and levelNow < 7:
@@ -97,7 +127,6 @@ class Game():
                     self.spaceShip.update()
                     self.window.blit(self.spaceShip.image, (self.spaceShip.x, self.spaceShip.y))
 
-                    cont = 3
                     for asteroid in self.asteroidList:
                         if ((self.spaceShip.x <= asteroid.x) and (self.spaceShip.x + self.spaceShip.w) >= asteroid.x) and ((self.spaceShip.y - asteroid.h) <= asteroid.y and ((self.spaceShip.y + asteroid.h) >= asteroid.y)) :
                             pg.mixer.Sound.play(self.explosion)
@@ -105,20 +134,14 @@ class Game():
                             if self.lives <= 0:
                                 pause = True
                                 self.textOverGame()
-                                utilsDataBase.insertPointsAndLevel(self.score, int(levelNow))
+                                if self.score > 0:
+                                    utilsDataBase.insertPointsAndLevel(self.score, int(levelNow))
                             else:
                                 self.lives -= 1
                             continue
 
                         if asteroid.x <= (  -asteroid.w * 2):
                             self.asteroidDeleteList.append(asteroid)
-
-                        if levelNow > self.deleteLevelAsteroid and cont > 0:
-                            asteroid.setDelete()
-                        elif levelNow > self.deleteLevelAsteroid and cont <= 0:
-                            self.deleteLevelAsteroid = levelNow
-
-                        cont -= 1
 
                         if asteroid.update():
                             self.score += 15
@@ -135,25 +158,25 @@ class Game():
 
 
     def textOverGame(self):
-        textOverGame = self.font.render('GAME OVER', True, (255, 255, 255))
-        textReset = self.font.render('Pulsa \'R\' para comenzar de nuevo', True, (255, 255, 255))
+        textOverGame = self.font.render('GAME OVER', True, WHITE)
+        textReset = self.font.render('Pulsa \'R\' para comenzar de nuevo', True, WHITE)
         self.window.blit(textOverGame, textOverGame.get_rect(center = self.window.get_rect().center))
         self.window.blit(textReset, (SIZE[0]/2, SIZE[1] + 20))
 
     def textScore(self, points):
         string = "PUNTOS: " + str(points)
-        textClose = self.font.render('Pulsa \'M\' para cerrar y \'P\' para pausar', True, (255, 255, 255))
-        text = self.font.render(string, True, (255, 255, 255))
+        textClose = self.font.render('Pulsa \'M\' para cerrar y \'P\' para pausar', True, WHITE)
+        text = self.font.render(string, True, WHITE)
         self.window.blit(text, (20, SIZE[1] + 20))
         self.window.blit(textClose, (SIZE[0]/2, SIZE[1] + 55))
 
     def textLevel(self):
         string = "LEVEL: " + str(self.nextLevel / self.numNextLevel)
-        text = self.font.render(string, True, (255, 255, 255))
+        text = self.font.render(string, True, WHITE)
         self.window.blit(text, (20, SIZE[1] + 55))
 
     def textPause(self):
-        text = self.font.render("Juego pausado pulse \'P\' para continuar", True, (255, 255, 255))
+        text = self.font.render("Juego pausado pulse \'P\' para continuar", True, WHITE)
         self.window.blit(text, text.get_rect(center = self.window.get_rect().center))
 
     def addAsteroidList(self):
@@ -172,29 +195,62 @@ class Game():
         self.score = 0
         self.count = 0
 
+    def initIntro(self):
+        self.window.fill(BLACK) 
+        position = 50
+        textPrimary = self.fontBig.render("Intro a SearhWorld", True, WHITE)
+        self.window.blit(textPrimary, (int(SIZE[0]/2 - textPrimary.get_rect()[2]/2) , position))
+        position += textPrimary.get_rect()[3] + 50
+        textSecundary = self.font.render("- Para mover hacia arriba la nave pulsa 'flecha arriba'", True, WHITE)
+        self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
+        position += textSecundary.get_rect()[3] + 12
+        textSecundary = self.font.render("- Para mover hacia abajo la nave pulsa 'flecha abajo'", True, WHITE)
+        self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
+        position += textSecundary.get_rect()[3] + 12
+        textSecundary = self.font.render("- Mientras se incremente el nivel se iran incrementando los asteroides", True, WHITE)
+        self.window.blit(textSecundary, (int(SIZE[0]/2 - textSecundary.get_rect()[2]/2) , position))
+        position += SIZE[1]/4*3
+        textPrimary = self.fontBig.render("¡¡¡Buena suerte!!!", True, WHITE)
+        self.window.blit(textPrimary, (int(SIZE[0]/2 - textPrimary.get_rect()[2]/2) , position))
+
     def initMenu(self):
         if self.menuIsView == False:
             self.menuIsView = True
-            self.window.fill((0, 0, 0)) 
-            textWelcome = self.fontBig.render("BIENVENIDO A SearhWorld", True, (255, 255, 255))
+            self.window.fill(BLACK) 
+            textWelcome = self.fontBig.render("BIENVENIDO A SearhWorld", True, WHITE)
             self.window.blit(textWelcome, (int(SIZE[0]/2 - textWelcome.get_rect()[2]/2) , 50))
-            textBestScore = self.font.render("Mejores resultados", True, (255, 255, 255))
-            self.window.blit(textBestScore, (int(SIZE[0]/2 - textBestScore.get_rect()[2]/2) , 70 + textWelcome.get_rect()[3]))
-            positionY1 = 120
-            positionY2 = textBestScore.get_rect()[3]
-            for modelResults in utilsDataBase.selectAllTable():
-                string = "Puntos: " + str(modelResults)
-                textScore = self.font.render(string, True, (255, 255, 255))
-                self.window.blit(textScore, (int(SIZE[0]/2 - textScore.get_rect()[2]/2) , positionY1 + positionY2))
-                positionY1 += 15
-                positionY2 += textScore.get_rect()[3]
+            listResults = utilsDataBase.selectAllTable()
+            if listResults != []:
+                textBestScore = self.font.render("Mejores resultados", True, WHITE)
+                self.window.blit(textBestScore, (int(SIZE[0]/2 - textBestScore.get_rect()[2]/2) , 70 + textWelcome.get_rect()[3]))
+                positionY1 = 120
+                positionY2 = textBestScore.get_rect()[3]
+                cont = 1
+                for result in listResults:
+                    string = str(cont) + "º premio: " + result
+                    textScore = self.font.render(string, True, WHITE)
+                    self.window.blit(textScore, (int(SIZE[0]/2 - textScore.get_rect()[2]/2) , positionY1 + positionY2))
+                    positionY1 += 15
+                    positionY2 += textScore.get_rect()[3]
+                    cont += 1
 
-            textSpace = self.fontBig.render("Pulsa \'ESPACIO\' para comenzar el juego", True, (255, 255, 255))
-            self.window.blit(textSpace, (int(SIZE[0]/2 - textSpace.get_rect()[2]/2) , SIZE[1]/3*2))
+            positionSelect = SIZE[1]/4*3
+            textSelect = self.font.render("Pulsa 'ESPACIO' para continuar la opcción seleccionada", True, WHITE)
+            self.window.blit(textSelect, (int(SIZE[0]/2 - textSelect.get_rect()[2]/2) , positionSelect))
+            positionSelect += textSelect.get_rect()[3] + 20
+            for item in self.listItem:
+                colorSelect = BLACK
+                color = WHITE
+                if self.selectListItem == item:
+                    color = BLACK
+                    colorSelect = WHITE
+                textNewGame = self.font.render(item, True, color)
+                pg.draw.rect(self.window, colorSelect, pg.Rect(int(SIZE[0]/2 - 400/2) , positionSelect,400,textNewGame.get_rect()[3]))
+                self.window.blit(textNewGame, (int(SIZE[0]/2 - textNewGame.get_rect()[2]/2) , positionSelect))
+                positionSelect += textNewGame.get_rect()[3]
        
 juego = Game(800, 700)
 utilsDataBase = UtilsDataBase
-#utilsDataBase.deleteTable()
 utilsDataBase.createTableIfNotExits()
 utilsDataBase.selectAllTable()
 juego.addAsteroidList()

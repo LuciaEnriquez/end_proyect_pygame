@@ -13,20 +13,16 @@ class Asteroid():
         self.image = image
         self.setYandX()
         self.setDimensionAsteroid()
-        self.delete = False
         self.speed = randint(2 , 8)
 
     def update(self):
         self.x -= self.speed
 
-        if self.x <= ( - self.w) and self.delete == False:
+        if self.x <= ( - self.w):
             self.setYandX()
             return True
         else:
             return False
-
-    def setDelete(self):
-        self.delete = True
 
     def setYandX(self):
         section = self.size[1]

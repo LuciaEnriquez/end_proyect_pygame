@@ -1,5 +1,4 @@
 import sqlite3 as sqlite
-import ModelResults as ModelResults
 
 class UtilsDataBase():
 
@@ -22,14 +21,15 @@ class UtilsDataBase():
     def selectAllTable():
         list = []
         conn = sqlite.connect('DataBase.db')
-        cursor = conn.execute("SELECT ID, PUNTOS, NIVEL from RESULTADOS ORDER BY CAST(PUNTOS AS INT) ASC")
+        cursor = conn.execute("SELECT ID, PUNTOS, NIVEL from RESULTADOS ORDER BY CAST(PUNTOS AS INT) DESC LIMIT 5")
         for row in cursor:
-            list.append(row[1])
+            list.append(str(row[1]) + " con nivel " + str(row[2]))
 
         conn.close()
         return list
 
-    def deleteTable():
+    def resetTable():
         conn = sqlite.connect('DataBase.db')
-        conn.execute('DROP TABLE RESULTADOS;')
+        conn.execute('DROP TABLE IF EXISTS RESULTADOS;')
         conn.close()
+        UtilsDataBase.createTableIfNotExits()
