@@ -51,7 +51,7 @@ class Game():
         self.menuIsView = False
         game_over = False
         pause = False
-        selectStatus = self.listStatus[2]
+        selectStatus = self.listStatus[0]
         timeInfo = pg.time.get_ticks()
         while not game_over:
             self.time.tick(50)
