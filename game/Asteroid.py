@@ -1,9 +1,12 @@
 import pygame as pg
 from random import randint
+import os
 
 class Asteroid():
 
-    def __init__(self, size, image):
+    resourcesDir = os.getcwd()+ "/game/resources/"
+
+    def __init__(self, size):
         self.x = size[0]-20
         self.y = 0
         self.w = 20
@@ -11,7 +14,7 @@ class Asteroid():
         self.size = size
         self.stop = False
         self.color = (255,255,255,0)
-        self.image = image
+        self.image = pg.image.load(os.path.join(self.resourcesDir, "asteroid.png"))
         self.setYandX()
         self.setDimensionAsteroid()
         self.speed = randint(2 , 8)
@@ -38,6 +41,7 @@ class Asteroid():
 
     def setDimensionAsteroid(self):
         dimen = randint(20, 40)
+        self.image = pg.image.load(os.path.join(self.resourcesDir, "asteroid.png"))
         self.image = pg.transform.scale(self.image, (dimen, dimen))
         self.w = dimen
         self.h = dimen

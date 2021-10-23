@@ -25,7 +25,6 @@ class Game():
     countLevel = numCountLevel
     deleteLevelAsteroid = 6
     resourcesDir = os.getcwd()+ "/game/resources/"
-    image = pg.image.load(os.path.join(resourcesDir, "asteroid.png"))
     score = 0
     count = 0
     spaceShip = SpaceShip(SIZE[1], pg.image.load(os.path.join(resourcesDir, "spaceship.png")))
@@ -219,7 +218,7 @@ class Game():
         self.window.blit(text, text.get_rect(center = self.window.get_rect().center))
 
     def addAsteroidList(self):
-        asteroid = Asteroid(SIZE, self.image)
+        asteroid = Asteroid(SIZE)
         self.asteroidList.append(asteroid)
 
     def resetGame(self):
